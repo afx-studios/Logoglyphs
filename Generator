@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrival Logoglyph Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    button { margin: 10px; padding: 8px; }
+    input { padding: 6px; margin: 5px; }
+    .controls { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="controls">
+  <button onclick="undo()">Undo</button>
+  <button onclick="redo()">Redo</button>
+  <label for="numSections">Sections:</label>
+  <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
+  <button onclick="exportImage()">Export as Image</button>
+</div>
+
+<script>
+  let numSections = 24;
+  let drawingHistory = [];
+  let currentStep = -1;
+  const maxHistory = 50;  // Max undo/redo steps
+  let isDrawing = false;
+  let previousPos = null;
+
+  function setup() {
+    createCanvas(windowWidth, windowHeight);
+    clearCanvas();
+  }
+
+  function clearCanvas() {
+    clear();
+    translate(width / 2, height / 2);
+    stroke(0);
+    noFill();
+    strokeWeight(2);
+    ellipse(0, 0, min(width, height) * 0.9);
+    drawSections();
+    if (currentStep >= 0) {
+      image(drawingHistory[currentStep], -width / 2, -height / 2);
+    }
+  }
+
+  function drawSections() {
+    let angleStep = TWO_PI / numSections;
+    for (let i = 0; i < numSections; i++) {
+      let x = cos(i * angleStep) * min(width, height) * 0.45;
+      let y = sin(i * angleStep) * min(width, height) * 0.45;
+      line(0, 0, x, y);
+    }
+  }
+
+  function draw() {
+    if (isDrawing && previousPos) {
+      translate(width / 2, height / 2);
+      let angleStep = TWO_PI / numSections;
+      stroke(0);
+      strokeWeight(2);
+
+      let newPos = createVector(mouseX - width / 2, mouseY - height / 2);
+      line(previousPos.x, previousPos.y, newPos.x, newPos.y);
+
+      // Mirror the line across all sections
+      for (let i = 1; i < numSections; i++) {
+        let angle = i * angleStep;
+        let rotatedPrev = previousPos.copy().rotate(angle);
+        let rotatedNew = newPos.copy().rotate(angle);
+        line(rotatedPrev.x, rotatedPrev.y, rotatedNew.x, rotatedNew.y);
+      }
+      previousPos = newPos;
+    }
+  }
+
+  function mousePressed() {
+    previousPos = createVector(mouseX - width / 2, mouseY - height / 2);
+    isDrawing = true;
+  }
+
+  function mouseReleased() {
+    isDrawing = false;
+    saveState();
+  }
+
+  function saveState() {
+    if (drawingHistory.length > maxHistory) {
+      drawingHistory.shift();
+      currentStep--;
+    }
+    currentStep++;
+    drawingHistory[currentStep] = get();
+    drawingHistory = drawingHistory.slice(0, currentStep + 1);
+  }
+
+  function undo() {
+    if (currentStep > 0) {
+      currentStep--;
+      clearCanvas();
+    }
+  }
+
+  function redo() {
+    if (currentStep < drawingHistory.length - 1) {
+      currentStep++;
+      clearCanvas();
+    }
+  }
+
+  function updateSections() {
+    numSections = max(1, int(document.getElementById('numSections').value));
+    clearCanvas();
+  }
+
+  // Function to export the canvas as an image
+  function exportImage() {
+    saveCanvas('logoglyph', 'png');  // Saves the canvas as 'logoglyph.png'
+  }
+</script>
+
+</body>
+</html>
