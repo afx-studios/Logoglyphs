@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ink Blot Circle</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+  <style>
+    body { margin: 20px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Ink Blot Circle</h1>
+  <button onclick="undo()">Undo</button>
+  <button onclick="redo()">Redo</button>
+  Sections: <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
+  <br>
+  <div id="color-picker-container"></div>
+
+<script>
+let history = [];
+let currentHistoryIndex = -1;
+let numSections = 24; 
+let prevMouseX, prevMouseY;
+let isDrawing = false;
+let currentColor = [0, 0, 0]; // Default color is black
+
+function setup() {
+  createCanvas(2000, 2000);
+  
+  // Create color picker
+  const colorPicker = createColorPicker('#000000');
+  colorPicker.parent('color-picker-container');
+  colorPicker.input(updateColor);
+}
+
+function draw() {
+  background(255);
+  translate(width / 2, height / 2); 
+
+  // Draw open circle
+  noFill();
+  strokeWeight(10);
+  stroke(0); 
+  ellipse(0, 0, 1000, 1000); 
+
+  // Draw section lines
+  stroke(0, 0, 0, 0); 
+  let angleStep = 360 / numSections;
+  for (let i = 0; i < numSections; i++) {
+    line(0, 0, 1000 * cos(i * angleStep), 1000 * sin(i * angleStep));
+  }
+
+  // Draw ink blots from history
+  for (let i = 0; i <= currentHistoryIndex; i++) {
+    image(history[i], -width / 2, -height / 2); 
+  }
+
+  // Create calligraphy stroke
+  if (mouseIsPressed) {
+    noFill();
+    strokeWeight(10);
+    stroke(currentColor); // Use the selected color
+
+    let currentX = mouseX - width / 2;
+    let currentY = mouseY - height / 2;
+
+    if (!isDrawing) {
+      history.push(get());
+      currentHistoryIndex++;
+      isDrawing = true;
+    }
+
+    let speed = dist(currentX, currentY, prevMouseX, prevMouseY);
+    strokeWeight(map(speed, 0, 50, 20, 5));
+    line(prevMouseX, prevMouseY, currentX, currentY);
+
+    // Draw mirrored lines
+    for (let i = 1; i < numSections; i++) {
+      let angle = i * angleStep;
+      let x2 = currentX * cos(angle) - currentY * sin(angle);
+      let y2 = currentX * sin(angle) + currentY * cos(angle);
+      let prevX2 = prevMouseX * cos(angle) - prevMouseY * sin(angle);
+      let prevY2 = prevMouseX * sin(angle) + prevMouseY * cos(angle);
+      line(prevX2, prevY2, x2, y2);
+    } 
+
+    prevMouseX = currentX;
+    prevMouseY = currentY;
+  } else {
+    isDrawing = false; 
+  }
+}
+
+function undo() {
+  if (currentHistoryIndex > 0) {
+    currentHistoryIndex--;
+  }
+}
+
+function redo() {
+  if (currentHistoryIndex < history.length - 1) {
+    currentHistoryIndex++;
+  }
+}
+
+function updateSections() {
+  numSections = parseInt(document.getElementById('numSections').value);
+  numSections = max(1, numSections); 
+}
+
+function updateColor() {
+  currentColor = this.color().levels; // Update currentColor with RGB values
+}
+</script>
+
+</body>
+</html>
