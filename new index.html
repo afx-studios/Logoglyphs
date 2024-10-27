@@ -1,0 +1,46 @@
+TYPE html>
+<html>
+<head>
+  <title>Ink Blot Database</title>
+  <style>
+    body { 
+      font-family: sans-serif;
+    }
+    .container { 
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive columns */
+      grid-gap: 20px;
+      padding: 20px;
+    }
+    .inkblot-item {
+      text-align: center; 
+    }
+    .inkblot-item img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ddd; 
+    }
+  </style>
+</head>
+<body>
+
+<h1>Ink Blot Database</h1>
+
+<div class="container">
+
+  <div class="inkblot-item">
+    <img src="inkblot_a.png" alt="Inkblot A">
+    <p>A</p>
+  </div>
+
+  <div class="inkblot-item">
+    <img src="inkblot_b.png" alt="Inkblot B">
+    <p>B</p>
+  </div>
+
+  <div class="inkblot-item">
+    <img src="inkblot_c.png" alt="Inkblot C">
+    <p>C</p>
+  </div>
+
+  </div> </body> </html>
