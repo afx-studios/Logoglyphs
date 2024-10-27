@@ -1,127 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arrival Logoglyph Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    button { margin: 10px; padding: 8px; }
-    input { padding: 6px; margin: 5px; }
-    .controls { text-align: center; margin-top: 20px; }
-  </style>
-</head>
-<body>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Logoglyph Generator</title>  
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>  
+    <style>  
+        body { display: flex; flex-direction: column; align-items: center; }  
+        button { margin: 5px; }  
+        canvas { border: 1px solid black; }  
+    </style>  
+</head>  
+<body>  
 
-<div class="controls">
-  <button onclick="undo()">Undo</button>
-  <button onclick="redo()">Redo</button>
-  <label for="numSections">Sections:</label>
-  <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
-  <button onclick="exportImage()">Export as Image</button>
-</div>
+    <button onclick="undo()">Undo</button>  
+    <button onclick="redo()">Redo</button>  
+    <button onclick="clearCanvas()">Clear Canvas</button>  
+    Sections: <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">  
+    <button onclick="saveCanvas()">Save as Image</button>  
 
-<script>
-  let numSections = 24;
-  let drawingHistory = [];
-  let currentStep = -1;
-  const maxHistory = 50;  // Max undo/redo steps
-  let isDrawing = false;
-  let previousPos = null;
+    <script>  
+        const MAX_HISTORY = 10;   
+        let history = [];  
+        let currentHistoryIndex = -1;  
+        let numSections = 24;   
+        let prevMouseX, prevMouseY;  
+        let isDrawing = false;  
 
-  function setup() {
-    createCanvas(windowWidth, windowHeight);
-    clearCanvas();
-  }
+        function setup() {  
+            createCanvas(800, 800);  
+            clear();  
+        }  
 
-  function clearCanvas() {
-    clear();
-    translate(width / 2, height / 2);
-    stroke(0);
-    noFill();
-    strokeWeight(2);
-    ellipse(0, 0, min(width, height) * 0.9);
-    drawSections();
-    if (currentStep >= 0) {
-      image(drawingHistory[currentStep], -width / 2, -height / 2);
-    }
-  }
+        function draw() {  
+            translate(width / 2, height / 2);  
+            noFill();  
+            strokeWeight(10);  
+            stroke(0);  
+            ellipse(0, 0, 600, 600); // Draw outer circle  
 
-  function drawSections() {
-    let angleStep = TWO_PI / numSections;
-    for (let i = 0; i < numSections; i++) {
-      let x = cos(i * angleStep) * min(width, height) * 0.45;
-      let y = sin(i * angleStep) * min(width, height) * 0.45;
-      line(0, 0, x, y);
-    }
-  }
+            let angleStep = 360 / numSections;  
 
-  function draw() {
-    if (isDrawing && previousPos) {
-      translate(width / 2, height / 2);
-      let angleStep = TWO_PI / numSections;
-      stroke(0);
-      strokeWeight(2);
+            // Draw section lines  
+            for (let i = 0; i < numSections; i++) {  
+                line(0, 0, 600 * cos(i * angleStep), 600 * sin(i * angleStep));  
+            }  
 
-      let newPos = createVector(mouseX - width / 2, mouseY - height / 2);
-      line(previousPos.x, previousPos.y, newPos.x, newPos.y);
+            // Draw ink blots from history  
+            if (currentHistoryIndex >= 0) {  
+                image(history[currentHistoryIndex], -width / 2, -height / 2);  
+            }  
 
-      // Mirror the line across all sections
-      for (let i = 1; i < numSections; i++) {
-        let angle = i * angleStep;
-        let rotatedPrev = previousPos.copy().rotate(angle);
-        let rotatedNew = newPos.copy().rotate(angle);
-        line(rotatedPrev.x, rotatedPrev.y, rotatedNew.x, rotatedNew.y);
-      }
-      previousPos = newPos;
-    }
-  }
+            // Create calligraphy stroke  
+            if (mouseIsPressed) {  
+                noFill();  
+                strokeWeight(10);  
+                stroke(0);  
+                let currentX = mouseX - width / 2;  
+                let currentY = mouseY - height / 2;  
 
-  function mousePressed() {
-    previousPos = createVector(mouseX - width / 2, mouseY - height / 2);
-    isDrawing = true;
-  }
+                if (isDrawing) {  
+                    let speed = dist(currentX, currentY, prevMouseX, prevMouseY);  
+                    strokeWeight(map(speed, 0, 50, 20, 5));  
+                    line(prevMouseX, prevMouseY, currentX, currentY);  
 
-  function mouseReleased() {
-    isDrawing = false;
-    saveState();
-  }
+                    // Draw mirrored lines  
+                    for (let i = 1; i < numSections; i++) {  
+                        let angle = i * angleStep;  
+                        let x2 = currentX * cos(angle) - currentY * sin(angle);  
+                        let y2 = currentX * sin(angle) + currentY * cos(angle);  
+                        line(prevMouseX * cos(angle) - prevMouseY * sin(angle), prevMouseX * sin(angle) + prevMouseY * cos(angle), x2, y2);  
+                    }  
+                } else {  
+                    prevMouseX = currentX;  
+                    prevMouseY = currentY;  
+                    isDrawing = true;  
+                }  
+                prevMouseX = currentX;  
+                prevMouseY = currentY;  
 
-  function saveState() {
-    if (drawingHistory.length > maxHistory) {
-      drawingHistory.shift();
-      currentStep--;
-    }
-    currentStep++;
-    drawingHistory[currentStep] = get();
-    drawingHistory = drawingHistory.slice(0, currentStep + 1);
-  }
+                // Save current state to history  
+                history.push(get());  
+                currentHistoryIndex++;  
 
-  function undo() {
-    if (currentStep > 0) {
-      currentStep--;
-      clearCanvas();
-    }
-  }
+                // Limit history to MAX_HISTORY entries  
+                if (history.length > MAX_HISTORY) {  
+                    history.shift();  
+                    currentHistoryIndex--;  
+                }  
+            } else {  
+                isDrawing = false;  
+            }  
+        }  
 
-  function redo() {
-    if (currentStep < drawingHistory.length - 1) {
-      currentStep++;
-      clearCanvas();
-    }
-  }
+        function undo() {  
+            if (currentHistoryIndex > 0) {  
+                currentHistoryIndex--;  
+            }  
+        }  
 
-  function updateSections() {
-    numSections = max(1, int(document.getElementById('numSections').value));
-    clearCanvas();
-  }
+        function redo() {  
+            if (currentHistoryIndex < history.length - 1) {  
+                currentHistoryIndex++;  
+            }  
+        }  
 
-  // Function to export the canvas as an image
-  function exportImage() {
-    saveCanvas('logoglyph', 'png');  // Saves the canvas as 'logoglyph.png'
-  }
-</script>
+        function updateSections() {  
+            numSections = parseInt(document.getElementById('numSections').value);  
+            numSections = max(1, numSections);  
+        }  
 
-</body>
+        function clearCanvas() {  
+            clear();  
+            history = [];  
+            currentHistoryIndex = -1;  
+        }  
+
+        function saveCanvas() {  
+            saveCanvas('logoglyph', 'png');  
+        }  
+    </script>  
+</body>  
 </html>
