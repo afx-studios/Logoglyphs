@@ -1,4 +1,5 @@
 ARRIVAL LOGOGLYPH GENERATOR
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38,7 +39,20 @@ ARRIVAL LOGOGLYPH GENERATOR
     const canvas = createCanvas(600, 600);
     canvas.parent("canvasContainer");
     angleMode(DEGREES);
+    clearCanvas();
+  }
+
+  function clearCanvas() {
     background(255);
+    drawBaseCircle();
+  }
+
+  function drawBaseCircle() {
+    translate(width / 2, height / 2);
+    noFill();
+    stroke(0);
+    strokeWeight(10);
+    ellipse(0, 0, 300); // Base circle diameter
   }
 
   function updateSections() {
@@ -53,11 +67,9 @@ ARRIVAL LOGOGLYPH GENERATOR
     brushColor = document.getElementById("colorPicker").value;
   }
 
-  function clearCanvas() {
-    background(255);
-  }
-
   function draw() {
+    translate(width / 2, height / 2);
+
     if (mouseIsPressed) {
       if (!isDrawing) {
         prevX = mouseX - width / 2;
@@ -65,7 +77,6 @@ ARRIVAL LOGOGLYPH GENERATOR
         isDrawing = true;
       }
 
-      translate(width / 2, height / 2);
       let angleStep = 360 / numSections;
 
       for (let i = 0; i < numSections; i++) {
@@ -84,13 +95,17 @@ ARRIVAL LOGOGLYPH GENERATOR
 
   function drawStroke(x1, y1, x2, y2) {
     stroke(brushColor);
-    strokeWeight(brushSize);
+    strokeWeight(brushSize + random(0, 5)); // Variable thickness for randomness
     line(x1, y1, x2, y2);
 
-    // Add a splatter effect for organic look
-    if (random(1) < 0.3) {
-      let splatterSize = random(brushSize, brushSize * 2);
-      ellipse(x2 + random(-5, 5), y2 + random(-5, 5), splatterSize, splatterSize);
+    // Add randomized ink blots for organic look
+    if (random(1) < 0.3) { // 30% chance of a blot
+      let blotSize = random(brushSize, brushSize * 2.5);
+      let blotX = x2 + random(-10, 10);
+      let blotY = y2 + random(-10, 10);
+      noStroke();
+      fill(brushColor);
+      ellipse(blotX, blotY, blotSize, blotSize);
     }
   }
 
@@ -101,4 +116,3 @@ ARRIVAL LOGOGLYPH GENERATOR
 
 </body>
 </html>
-
