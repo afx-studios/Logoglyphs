@@ -1,117 +1,77 @@
 ARRIVAL LOGOGLYPH GENERATOR
-<!DOCTYPE html>
+TYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Heptapod Glyph Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+  <title>Arrival Logoglyph Generator</title>
   <style>
-    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; }
-    .controls { margin-top: 10px; }
-    canvas { border: 1px solid #ddd; }
+    body { font-family: Arial, sans-serif; text-align: center; }
+    .controls { margin: 20px; }
+    canvas { border: 1px solid #ddd; background: white; }
   </style>
 </head>
 <body>
 
-<h1>Heptapod Glyph Generator</h1>
+<h1>Arrival Logoglyph Generator</h1>
 
 <div class="controls">
-  <label>Sections: <input type="number" id="numSections" value="12" min="1" onchange="updateSections()"></label>
-  <label>Brush Size: <input type="range" min="1" max="20" value="5" id="brushSize" onchange="updateBrushSize()"></label>
-  <label>Brush Color: <input type="color" id="colorPicker" value="#000000" onchange="updateBrushColor()"></label>
-  <button onclick="clearCanvas()">Clear Canvas</button>
-  <button onclick="exportGlyph()">Export Glyph</button>
+  <label>Circle Radius: <input type="range" id="radius" min="50" max="200" value="150"></label>
+  <label>Stroke Width: <input type="range" id="strokeWidth" min="5" max="20" value="10"></label>
+  <label>Blot Size: <input type="range" id="blotSize" min="10" max="50" value="30"></label>
+  <label>Blot Angle: <input type="range" id="blotAngle" min="0" max="360" value="45"></label>
+  <button onclick="exportImage()">Export Glyph</button>
 </div>
 
-<div id="canvasContainer">
-  <canvas id="glyphCanvas"></canvas>
-</div>
+<canvas id="glyphCanvas" width="400" height="400"></canvas>
 
 <script>
-  let numSections = 12;
-  let brushSize = 5;
-  let brushColor = "#000000";
-  let isDrawing = false;
-  let prevX, prevY;
+  const canvas = document.getElementById("glyphCanvas");
+  const ctx = canvas.getContext("2d");
+  const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
-  function setup() {
-    const canvas = createCanvas(600, 600);
-    canvas.parent("canvasContainer");
-    angleMode(DEGREES);
-    clearCanvas();
+  // Draw the circle and ink blot
+  function drawGlyph() {
+    const radius = parseInt(document.getElementById("radius").value);
+    const strokeWidth = parseInt(document.getElementById("strokeWidth").value);
+    const blotSize = parseInt(document.getElementById("blotSize").value);
+    const blotAngle = parseInt(document.getElementById("blotAngle").value);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the circle
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+
+    // Draw the ink blot
+    const angleRad = (blotAngle * Math.PI) / 180;
+    const blotX = center.x + (radius + strokeWidth / 2) * Math.cos(angleRad);
+    const blotY = center.y + (radius + strokeWidth / 2) * Math.sin(angleRad);
+
+    ctx.beginPath();
+    ctx.arc(blotX, blotY, blotSize, 0, 2 * Math.PI);
+    ctx.fillStyle = "black";
+    ctx.fill();
   }
 
-  function clearCanvas() {
-    background(255);
-    drawBaseCircle();
+  // Update glyph on parameter change
+  document.querySelectorAll(".controls input").forEach(input => {
+    input.addEventListener("input", drawGlyph);
+  });
+
+  // Export the canvas as an image
+  function exportImage() {
+    const link = document.createElement("a");
+    link.download = "heptapod_glyph.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   }
 
-  function drawBaseCircle() {
-    translate(width / 2, height / 2);
-    noFill();
-    stroke(0);
-    strokeWeight(10);
-    ellipse(0, 0, 300); // Base circle diameter
-  }
-
-  function updateSections() {
-    numSections = document.getElementById("numSections").value;
-  }
-
-  function updateBrushSize() {
-    brushSize = document.getElementById("brushSize").value;
-  }
-
-  function updateBrushColor() {
-    brushColor = document.getElementById("colorPicker").value;
-  }
-
-  function draw() {
-    translate(width / 2, height / 2);
-
-    if (mouseIsPressed) {
-      if (!isDrawing) {
-        prevX = mouseX - width / 2;
-        prevY = mouseY - height / 2;
-        isDrawing = true;
-      }
-
-      let angleStep = 360 / numSections;
-
-      for (let i = 0; i < numSections; i++) {
-        push();
-        rotate(i * angleStep);
-        drawStroke(prevX, prevY, mouseX - width / 2, mouseY - height / 2);
-        pop();
-      }
-
-      prevX = mouseX - width / 2;
-      prevY = mouseY - height / 2;
-    } else {
-      isDrawing = false;
-    }
-  }
-
-  function drawStroke(x1, y1, x2, y2) {
-    stroke(brushColor);
-    strokeWeight(brushSize + random(0, 5)); // Variable thickness for randomness
-    line(x1, y1, x2, y2);
-
-    // Add randomized ink blots for organic look
-    if (random(1) < 0.3) { // 30% chance of a blot
-      let blotSize = random(brushSize, brushSize * 2.5);
-      let blotX = x2 + random(-10, 10);
-      let blotY = y2 + random(-10, 10);
-      noStroke();
-      fill(brushColor);
-      ellipse(blotX, blotY, blotSize, blotSize);
-    }
-  }
-
-  function exportGlyph() {
-    saveCanvas("heptapod_glyph", "png");
-  }
+  // Initial draw
+  drawGlyph();
 </script>
 
 </body>
