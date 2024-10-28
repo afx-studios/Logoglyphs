@@ -1,139 +1,191 @@
+ARRIVAL LOGOGLYPH GENERATOR
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enhanced Arrival Logoglyph Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+  <title>Advanced Drawing Tool</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-    .controls { margin: 10px 0; }
-    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
-    .gallery img { width: 100%; height: auto; border: 1px solid #ddd; }
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; }
+    .toolbar, .layer-panel { display: flex; gap: 10px; margin: 10px; }
+    .canvas-container { position: relative; }
+    canvas { border: 1px solid #ddd; }
+    .layer { display: flex; align-items: center; }
+    .layer input { margin-right: 5px; }
   </style>
 </head>
 <body>
 
-<h1>Arrival Logoglyph Generator</h1>
-<div class="controls">
+<h1>Advanced Drawing Tool</h1>
+
+<div class="toolbar">
+  <button onclick="addLayer()">Add Layer</button>
   <button onclick="undo()">Undo</button>
   <button onclick="redo()">Redo</button>
-  <button onclick="clearCanvas()">Clear Canvas</button>
-  <button onclick="exportImage()">Export Inkblot</button>
-  <label>Sections:</label>
-  <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
-  <div id="color-picker-container"></div>
+  <button onclick="exportImage()">Export</button>
 </div>
 
-<div>
-  <canvas id="inkblotCanvas"></canvas>
+<div class="brush-tools toolbar">
+  <label>Brush Size: <input type="range" min="1" max="20" value="5" id="brushSize" onchange="updateBrushSize()"></label>
+  <label>Color: <input type="color" id="colorPicker" value="#000000" onchange="updateColor()"></label>
+  <button onclick="setBrushType('pencil')">Pencil</button>
+  <button onclick="setBrushType('ink')">Ink</button>
+  <button onclick="setBrushType('eraser')">Eraser</button>
 </div>
 
-<h2>Saved Inkblots</h2>
-<div class="gallery" id="galleryContainer"></div>
+<div class="shape-tools toolbar">
+  <button onclick="addShape('circle')">Circle</button>
+  <button onclick="addShape('rectangle')">Rectangle</button>
+  <button onclick="addText()">Text</button>
+</div>
+
+<div class="canvas-container" id="canvasContainer"></div>
+
+<div class="layer-panel">
+  <h3>Layers</h3>
+  <div id="layers"></div>
+</div>
 
 <script>
-  let numSections = 24;
-  let history = [];
-  let currentHistoryIndex = -1;
-  const maxHistory = 50;
-  let isDrawing = false;
-  let prevMouseX, prevMouseY;
-  let currentColor = [0, 0, 0];
+  const layers = [];
+  const history = [];
+  let currentLayer;
+  let brushSize = 5;
+  let brushColor = "#000000";
+  let brushType = "pencil";  // Options: pencil, ink, eraser
 
-  function setup() {
-    const canvas = createCanvas(500, 500);
-    canvas.parent("inkblotCanvas");
-    setupUI();
-    clearCanvas();
+  // Initialize base canvas layer
+  window.onload = () => addLayer();
+
+  // Layer management functions
+  function addLayer() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    canvas.style.position = "absolute";
+    canvas.style.zIndex = layers.length;
+    canvas.className = "drawing-layer";
+    canvas.getContext("2d").fillStyle = "white";
+    canvas.getContext("2d").fillRect(0, 0, canvas.width, canvas.height);
+    document.getElementById("canvasContainer").appendChild(canvas);
+    layers.push(canvas);
+    currentLayer = canvas;
+    addLayerToPanel();
   }
 
-  function setupUI() {
-    const colorPicker = createColorPicker("#000000");
-    colorPicker.parent("color-picker-container");
-    colorPicker.input(() => currentColor = colorPicker.color().levels);
+  function addLayerToPanel() {
+    const layerContainer = document.createElement("div");
+    layerContainer.className = "layer";
+    const layerCheckbox = document.createElement("input");
+    layerCheckbox.type = "checkbox";
+    layerCheckbox.checked = true;
+    layerCheckbox.onchange = (e) => toggleLayerVisibility(e.target, layers.length - 1);
+    const layerLabel = document.createElement("label");
+    layerLabel.textContent = `Layer ${layers.length}`;
+    layerContainer.appendChild(layerCheckbox);
+    layerContainer.appendChild(layerLabel);
+    document.getElementById("layers").appendChild(layerContainer);
   }
 
-  function draw() {
-    translate(width / 2, height / 2);
+  function toggleLayerVisibility(checkbox, layerIndex) {
+    layers[layerIndex].style.display = checkbox.checked ? "block" : "none";
+  }
 
-    if (mouseIsPressed && isDrawing) {
-      stroke(currentColor);
-      strokeWeight(10);
-      const currX = mouseX - width / 2;
-      const currY = mouseY - height / 2;
-      line(prevMouseX, prevMouseY, currX, currY);
+  // Brush and Drawing Functions
+  function updateBrushSize() {
+    brushSize = document.getElementById("brushSize").value;
+  }
 
-      const angleStep = TWO_PI / numSections;
-      for (let i = 1; i < numSections; i++) {
-        const angle = i * angleStep;
-        const rotatedPrev = rotatePoint(prevMouseX, prevMouseY, angle);
-        const rotatedCurr = rotatePoint(currX, currY, angle);
-        line(rotatedPrev.x, rotatedPrev.y, rotatedCurr.x, rotatedCurr.y);
-      }
-      prevMouseX = currX;
-      prevMouseY = currY;
-    } else if (mouseIsPressed) {
-      isDrawing = true;
-      prevMouseX = mouseX - width / 2;
-      prevMouseY = mouseY - height / 2;
-    } else {
-      isDrawing = false;
+  function updateColor() {
+    brushColor = document.getElementById("colorPicker").value;
+  }
+
+  function setBrushType(type) {
+    brushType = type;
+  }
+
+  function draw(e) {
+    if (!e.buttons) return; // Only draw when mouse is pressed
+    const ctx = currentLayer.getContext("2d");
+    ctx.fillStyle = brushColor;
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+
+    if (brushType === "eraser") ctx.globalCompositeOperation = "destination-out";
+    else ctx.globalCompositeOperation = "source-over";
+
+    ctx.beginPath();
+    ctx.arc(e.offsetX, e.offsetY, brushSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  currentLayer.addEventListener("mousemove", draw);
+
+  // Shape and Text Tools
+  function addShape(shape) {
+    const ctx = currentLayer.getContext("2d");
+    ctx.fillStyle = brushColor;
+    ctx.lineWidth = brushSize;
+
+    if (shape === "circle") {
+      ctx.beginPath();
+      ctx.arc(100, 100, 50, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (shape === "rectangle") {
+      ctx.fillRect(100, 100, 100, 50);
+    }
+    saveState();
+  }
+
+  function addText() {
+    const text = prompt("Enter text:");
+    if (text) {
+      const ctx = currentLayer.getContext("2d");
+      ctx.fillStyle = brushColor;
+      ctx.font = `${brushSize * 5}px Arial`;
+      ctx.fillText(text, 100, 100);
+      saveState();
     }
   }
 
-  function rotatePoint(x, y, angle) {
-    const cosA = cos(angle);
-    const sinA = sin(angle);
-    return createVector(x * cosA - y * sinA, x * sinA + y * cosA);
-  }
-
-  function exportImage() {
-    saveCanvas("inkblot", "png");
-    const img = createImg(getCanvasURL(), "Inkblot Image");
-    img.size(150, 150);
-    const gallery = document.getElementById("galleryContainer");
-    gallery.prepend(img.elt);
-  }
-
-  function getCanvasURL() {
-    return canvas.toDataURL("image/png");
+  // Undo/Redo Functionality
+  function saveState() {
+    if (history.length >= 10) history.shift(); // Limit history to 10 states
+    history.push(currentLayer.toDataURL());
   }
 
   function undo() {
-    if (currentHistoryIndex > 0) {
-      currentHistoryIndex--;
-      loadCanvas();
-    }
+    if (history.length === 0) return;
+    const lastState = history.pop();
+    const img = new Image();
+    img.src = lastState;
+    img.onload = () => {
+      const ctx = currentLayer.getContext("2d");
+      ctx.clearRect(0, 0, currentLayer.width, currentLayer.height);
+      ctx.drawImage(img, 0, 0);
+    };
   }
 
   function redo() {
-    if (currentHistoryIndex < history.length - 1) {
-      currentHistoryIndex++;
-      loadCanvas();
-    }
+    // Implement redo logic if needed
   }
 
-  function clearCanvas() {
-    clear();
-    translate(width / 2, height / 2);
-    stroke(0);
-    noFill();
-    ellipse(0, 0, width * 0.8);
-    drawSections();
-  }
+  // Export Functionality
+  function exportImage() {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = currentLayer.width;
+    exportCanvas.height = currentLayer.height;
+    const ctx = exportCanvas.getContext("2d");
 
-  function drawSections() {
-    const angleStep = TWO_PI / numSections;
-    for (let i = 0; i < numSections; i++) {
-      const x = cos(i * angleStep) * width * 0.4;
-      const y = sin(i * angleStep) * height * 0.4;
-      line(0, 0, x, y);
-    }
-  }
+    layers.forEach(layer => {
+      if (layer.style.display !== "none") {
+        ctx.drawImage(layer, 0, 0);
+      }
+    });
 
-  function updateSections() {
-    numSections = max(1, int(document.getElementById("numSections").value));
-    clearCanvas();
+    const link = document.createElement("a");
+    link.download = "drawing.png";
+    link.href = exportCanvas.toDataURL("image/png");
+    link.click();
   }
 </script>
 
