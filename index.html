@@ -1,5 +1,5 @@
 ARRIVAL LOGOGLYPH GENERATOR
-TYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -20,6 +20,13 @@ TYPE html>
   <label>Stroke Width: <input type="range" id="strokeWidth" min="5" max="20" value="10"></label>
   <label>Blot Size: <input type="range" id="blotSize" min="10" max="50" value="30"></label>
   <label>Blot Angle: <input type="range" id="blotAngle" min="0" max="360" value="45"></label>
+  <label>Blot Style: 
+    <select id="blotStyle">
+      <option value="circle">Circle</option>
+      <option value="splatter">Splatter</option>
+      <option value="irregular">Irregular</option>
+    </select>
+  </label>
   <button onclick="exportImage()">Export Glyph</button>
 </div>
 
@@ -36,6 +43,7 @@ TYPE html>
     const strokeWidth = parseInt(document.getElementById("strokeWidth").value);
     const blotSize = parseInt(document.getElementById("blotSize").value);
     const blotAngle = parseInt(document.getElementById("blotAngle").value);
+    const blotStyle = document.getElementById("blotStyle").value;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -46,19 +54,47 @@ TYPE html>
     ctx.strokeStyle = "black";
     ctx.stroke();
 
-    // Draw the ink blot
+    // Draw the ink blot based on style
     const angleRad = (blotAngle * Math.PI) / 180;
     const blotX = center.x + (radius + strokeWidth / 2) * Math.cos(angleRad);
     const blotY = center.y + (radius + strokeWidth / 2) * Math.sin(angleRad);
 
-    ctx.beginPath();
-    ctx.arc(blotX, blotY, blotSize, 0, 2 * Math.PI);
     ctx.fillStyle = "black";
-    ctx.fill();
+    drawBlot(blotX, blotY, blotSize, blotStyle);
+  }
+
+  // Draw different types of ink blots
+  function drawBlot(x, y, size, style) {
+    if (style === "circle") {
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, 2 * Math.PI);
+      ctx.fill();
+    } else if (style === "splatter") {
+      for (let i = 0; i < 5; i++) {
+        const randomSize = size * 0.3 + Math.random() * size * 0.7;
+        const offsetX = (Math.random() - 0.5) * size * 1.5;
+        const offsetY = (Math.random() - 0.5) * size * 1.5;
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, randomSize, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    } else if (style === "irregular") {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3 + Math.random() * 0.3;
+        const r = size * 0.6 + Math.random() * size * 0.4;
+        const offsetX = r * Math.cos(angle);
+        const offsetY = r * Math.sin(angle);
+        ctx.lineTo(x + offsetX, y + offsetY);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 
   // Update glyph on parameter change
-  document.querySelectorAll(".controls input").forEach(input => {
+  document.querySelectorAll(".controls input, .controls select").forEach(input => {
     input.addEventListener("input", drawGlyph);
   });
 
