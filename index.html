@@ -1,117 +1,71 @@
-<!DOCTYPE html>
-<html>
+TYPE html>
+<html lang="en">
 <head>
-  <title>Ink Blot Circle</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Arrival Logoglyph Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
   <style>
-    body { margin: 20px; }
-    button { margin: 5px; }
+    body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+    .controls { margin: 10px 0; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
+    .gallery img { width: 100%; height: auto; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
-  <h1>Ink Blot Circle</h1>
+
+<h1>Arrival Logoglyph Generator</h1>
+<div class="controls">
   <button onclick="undo()">Undo</button>
   <button onclick="redo()">Redo</button>
-  Sections: <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
-  <br>
+  <button onclick="clearCanvas()">Clear Canvas</button>
+  <button onclick="exportImage()">Export Inkblot</button>
+  <label>Sections:</label>
+  <input type="number" id="numSections" value="24" min="1" onchange="updateSections()">
   <div id="color-picker-container"></div>
+</div>
+
+<div>
+  <canvas id="inkblotCanvas"></canvas>
+</div>
+
+<h2>Saved Inkblots</h2>
+<div class="gallery" id="galleryContainer"></div>
 
 <script>
-let history = [];
-let currentHistoryIndex = -1;
-let numSections = 24; 
-let prevMouseX, prevMouseY;
-let isDrawing = false;
-let currentColor = [0, 0, 0]; // Default color is black
+  let numSections = 24;
+  let history = [];
+  let currentHistoryIndex = -1;
+  const maxHistory = 50;
+  let isDrawing = false;
+  let prevMouseX, prevMouseY;
+  let currentColor = [0, 0, 0];
 
-function setup() {
-  createCanvas(2000, 2000);
-  
-  // Create color picker
-  const colorPicker = createColorPicker('#000000');
-  colorPicker.parent('color-picker-container');
-  colorPicker.input(updateColor);
-}
-
-function draw() {
-  background(255);
-  translate(width / 2, height / 2); 
-
-  // Draw open circle
-  noFill();
-  strokeWeight(10);
-  stroke(0); 
-  ellipse(0, 0, 1000, 1000); 
-
-  // Draw section lines
-  stroke(0, 0, 0, 0); 
-  let angleStep = 360 / numSections;
-  for (let i = 0; i < numSections; i++) {
-    line(0, 0, 1000 * cos(i * angleStep), 1000 * sin(i * angleStep));
+  function setup() {
+    const canvas = createCanvas(500, 500);
+    canvas.parent("inkblotCanvas");
+    setupUI();
+    clearCanvas();
   }
 
-  // Draw ink blots from history
-  for (let i = 0; i <= currentHistoryIndex; i++) {
-    image(history[i], -width / 2, -height / 2); 
+  function setupUI() {
+    const colorPicker = createColorPicker("#000000");
+    colorPicker.parent("color-picker-container");
+    colorPicker.input(() => currentColor = colorPicker.color().levels);
   }
 
-  // Create calligraphy stroke
-  if (mouseIsPressed) {
-    noFill();
-    strokeWeight(10);
-    stroke(currentColor); // Use the selected color
+  function draw() {
+    translate(width / 2, height / 2);
 
-    let currentX = mouseX - width / 2;
-    let currentY = mouseY - height / 2;
+    if (mouseIsPressed && isDrawing) {
+      stroke(currentColor);
+      strokeWeight(10);
+      const currX = mouseX - width / 2;
+      const currY = mouseY - height / 2;
+      line(prevMouseX, prevMouseY, currX, currY);
 
-    if (!isDrawing) {
-      history.push(get());
-      currentHistoryIndex++;
-      isDrawing = true;
-    }
-
-    let speed = dist(currentX, currentY, prevMouseX, prevMouseY);
-    strokeWeight(map(speed, 0, 50, 20, 5));
-    line(prevMouseX, prevMouseY, currentX, currentY);
-
-    // Draw mirrored lines
-    for (let i = 1; i < numSections; i++) {
-      let angle = i * angleStep;
-      let x2 = currentX * cos(angle) - currentY * sin(angle);
-      let y2 = currentX * sin(angle) + currentY * cos(angle);
-      let prevX2 = prevMouseX * cos(angle) - prevMouseY * sin(angle);
-      let prevY2 = prevMouseX * sin(angle) + prevMouseY * cos(angle);
-      line(prevX2, prevY2, x2, y2);
-    } 
-
-    prevMouseX = currentX;
-    prevMouseY = currentY;
-  } else {
-    isDrawing = false; 
-  }
-}
-
-function undo() {
-  if (currentHistoryIndex > 0) {
-    currentHistoryIndex--;
-  }
-}
-
-function redo() {
-  if (currentHistoryIndex < history.length - 1) {
-    currentHistoryIndex++;
-  }
-}
-
-function updateSections() {
-  numSections = parseInt(document.getElementById('numSections').value);
-  numSections = max(1, numSections); 
-}
-
-function updateColor() {
-  currentColor = this.color().levels; // Update currentColor with RGB values
-}
-</script>
-
-</body>
-</html>
+      const angleStep = TWO_PI / numSections;
+      for (let i = 1; i < numSections; i++) {
+        const angle = i * angleStep;
+        const rotatedPrev = rotatePoint(prevMouseX, prevMouseY, angle);
+        const rotatedCurr = rotatePoint(currX, 
