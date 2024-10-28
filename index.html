@@ -1,59 +1,47 @@
 ARRIVAL LOGOGLYPH GENERATOR
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { RotateCw, Download, Trash, Layers } from 'lucide-react';
+import { Download, Trash } from 'lucide-react';
 
 const HeptapodGlyphGenerator = () => {
   const [paths, setPaths] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [rotation, setRotation] = useState(0);
   const [symmetryCount, setSymmetryCount] = useState(6);
   const [brushSize, setBrushSize] = useState(8);
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [splatter, setSplatter] = useState(false);
   const [currentPath, setCurrentPath] = useState([]);
-  const [layers, setLayers] = useState([{ paths: [], visible: true }]);
-  const [activeLayer, setActiveLayer] = useState(0);
-  const [text, setText] = useState('');
   const svgRef = useRef(null);
 
   const CANVAS_SIZE = 400;
   const CENTER = CANVAS_SIZE / 2;
 
-  // Convert point to polar coordinates relative to center
-  const toPolar = (x, y) => {
-    const dx = x - CENTER;
-    const dy = y - CENTER;
-    const radius = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx);
-    return { radius, angle };
-  };
-
-  // Convert polar coordinates back to cartesian
+  // Convert polar to cartesian coordinates for radial symmetry
   const toCartesian = (radius, angle) => {
     const x = CENTER + radius * Math.cos(angle);
     const y = CENTER + radius * Math.sin(angle);
     return { x, y };
   };
 
-  // Create symmetrical points around the circle
+  // Create symmetrical points for radial strokes
   const createSymmetricalPoints = (x, y) => {
-    const { radius, angle } = toPolar(x, y);
+    const dx = x - CENTER;
+    const dy = y - CENTER;
+    const radius = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
     const points = [];
     
     for (let i = 0; i < symmetryCount; i++) {
       const newAngle = angle + (2 * Math.PI * i) / symmetryCount;
-      const { x: newX, y: newY } = toCartesian(radius, newAngle);
-      points.push({ x: newX, y: newY });
+      points.push(toCartesian(radius, newAngle));
     }
     
     return points;
   };
 
-  // Handle mouse/touch movement
+  // Handle drawing with mouse movement
   const handleMove = (e) => {
     if (!isDrawing) return;
 
@@ -62,57 +50,108 @@ const HeptapodGlyphGenerator = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    setCurrentPath(prev => [...prev, ...createSymmetricalPoints(x, y)]);
+    const newPoints = createSymmetricalPoints(x, y);
+    setCurrentPath((prev) => [...prev, ...newPoints]);
   };
 
-  // Create SVG path from points
-  const createPathString = (points) => {
-    if (points.length === 0) return '';
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      path += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return path;
-  };
-
-  // Handle path completion
+  // Complete the current stroke
   const completePath = () => {
     if (currentPath.length > 0) {
-      const updatedLayers = [...layers];
-      updatedLayers[activeLayer].paths = [...updatedLayers[activeLayer].paths, currentPath];
-      setLayers(updatedLayers);
+      setPaths((prev) => [...prev, currentPath]);
       setCurrentPath([]);
     }
     setIsDrawing(false);
   };
 
-  // Export as SVG or PNG
-  const exportImage = (format = 'svg') => {
-    if (format === 'svg') {
-      const svgData = svgRef.current.outerHTML;
-      const blob = new Blob([svgData], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `heptapod-glyph-${text || 'untitled'}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else if (format === 'png') {
-      const svgElement = svgRef.current;
-      const svgData = new XMLSerializer().serializeToString(svgElement);
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      const img = new Image();
-      canvas.width = CANVAS_SIZE;
-      canvas.height = CANVAS_SIZE;
-      img.onload = () => {
-        context.drawImage(img, 0, 0);
-        const pngUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = pngUrl;
-        link.download = `heptapod-glyph-${text || 'untitled'}.png`;
-        document.body.appendChild(link);
-        link.click
+  // Export the SVG
+  const exportSVG = () => {
+    const svgData = svgRef.current.outerHTML;
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'heptapod-glyph.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle>Heptapod Glyph Generator</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="relative">
+            <svg
+              ref={svgRef}
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
+              className="border rounded-full bg-black"
+              onMouseDown={() => setIsDrawing(true)}
+              onMouseMove={handleMove}
+              onMouseUp={completePath}
+              onMouseLeave={completePath}
+            >
+              <circle cx={CENTER} cy={CENTER} r={CANVAS_SIZE / 2 - 2} fill="none" stroke="#333" strokeWidth="1" />
+              {paths.map((path, i) => (
+                <path
+                  key={i}
+                  d={`M ${path[0].x} ${path[0].y} ${path.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')}`}
+                  fill="none"
+                  stroke="white"
+                  strokeWidth={brushSize}
+                  strokeOpacity={brushOpacity}
+                  strokeLinecap="round"
+                />
+              ))}
+              {currentPath.length > 0 && (
+                <path
+                  d={`M ${currentPath[0].x} ${currentPath[0].y} ${currentPath.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')}`}
+                  fill="none"
+                  stroke="white"
+                  strokeWidth={brushSize}
+                  strokeOpacity={brushOpacity}
+                  strokeLinecap="round"
+                />
+              )}
+            </svg>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <span className="w-24">Symmetry:</span>
+              <Slider value={[symmetryCount]} onValueChange={(v) => setSymmetryCount(v[0])} min={2} max={12} />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="w-24">Brush Size:</span>
+              <Slider value={[brushSize]} onValueChange={(v) => setBrushSize(v[0])} min={1} max={20} />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="w-24">Opacity:</span>
+              <Slider value={[brushOpacity]} onValueChange={(v) => setBrushOpacity(v[0])} min={0.1} max={1} step={0.1} />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button onClick={exportSVG}>
+                <Download className="w-4 h-4 mr-2" /> Export SVG
+              </Button>
+              <Button variant="destructive" onClick={() => setPaths([])}>
+                <Trash className="w-4 h-4 mr-2" /> Clear
+              </Button>
+              <label>
+                Splatter: <input type="checkbox" checked={splatter} onChange={() => setSplatter(!splatter)} />
+              </label>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default HeptapodGlyphGenerator;
