@@ -52,6 +52,15 @@ const HeptapodGlyphGenerator = () => {
 
     const newPoints = createSymmetricalPoints(x, y);
     setCurrentPath((prev) => [...prev, ...newPoints]);
+
+    // Add random splatter effect
+    if (splatter && Math.random() < 0.3) {
+      const randomSize = Math.random() * brushSize * 1.5;
+      setCurrentPath((prev) => [
+        ...prev,
+        { x: x + (Math.random() - 0.5) * 20, y: y + (Math.random() - 0.5) * 20, size: randomSize }
+      ]);
+    }
   };
 
   // Complete the current stroke
