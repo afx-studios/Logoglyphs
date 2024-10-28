@@ -3,191 +3,102 @@ ARRIVAL LOGOGLYPH GENERATOR
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advanced Drawing Tool</title>
+  <title>Heptapod Glyph Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
   <style>
     body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; }
-    .toolbar, .layer-panel { display: flex; gap: 10px; margin: 10px; }
-    .canvas-container { position: relative; }
+    .controls { margin-top: 10px; }
     canvas { border: 1px solid #ddd; }
-    .layer { display: flex; align-items: center; }
-    .layer input { margin-right: 5px; }
   </style>
 </head>
 <body>
 
-<h1>Advanced Drawing Tool</h1>
+<h1>Heptapod Glyph Generator</h1>
 
-<div class="toolbar">
-  <button onclick="addLayer()">Add Layer</button>
-  <button onclick="undo()">Undo</button>
-  <button onclick="redo()">Redo</button>
-  <button onclick="exportImage()">Export</button>
-</div>
-
-<div class="brush-tools toolbar">
+<div class="controls">
+  <label>Sections: <input type="number" id="numSections" value="12" min="1" onchange="updateSections()"></label>
   <label>Brush Size: <input type="range" min="1" max="20" value="5" id="brushSize" onchange="updateBrushSize()"></label>
-  <label>Color: <input type="color" id="colorPicker" value="#000000" onchange="updateColor()"></label>
-  <button onclick="setBrushType('pencil')">Pencil</button>
-  <button onclick="setBrushType('ink')">Ink</button>
-  <button onclick="setBrushType('eraser')">Eraser</button>
+  <label>Brush Color: <input type="color" id="colorPicker" value="#000000" onchange="updateBrushColor()"></label>
+  <button onclick="clearCanvas()">Clear Canvas</button>
+  <button onclick="exportGlyph()">Export Glyph</button>
 </div>
 
-<div class="shape-tools toolbar">
-  <button onclick="addShape('circle')">Circle</button>
-  <button onclick="addShape('rectangle')">Rectangle</button>
-  <button onclick="addText()">Text</button>
-</div>
-
-<div class="canvas-container" id="canvasContainer"></div>
-
-<div class="layer-panel">
-  <h3>Layers</h3>
-  <div id="layers"></div>
+<div id="canvasContainer">
+  <canvas id="glyphCanvas"></canvas>
 </div>
 
 <script>
-  const layers = [];
-  const history = [];
-  let currentLayer;
+  let numSections = 12;
   let brushSize = 5;
   let brushColor = "#000000";
-  let brushType = "pencil";  // Options: pencil, ink, eraser
+  let isDrawing = false;
+  let prevX, prevY;
 
-  // Initialize base canvas layer
-  window.onload = () => addLayer();
-
-  // Layer management functions
-  function addLayer() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 600;
-    canvas.style.position = "absolute";
-    canvas.style.zIndex = layers.length;
-    canvas.className = "drawing-layer";
-    canvas.getContext("2d").fillStyle = "white";
-    canvas.getContext("2d").fillRect(0, 0, canvas.width, canvas.height);
-    document.getElementById("canvasContainer").appendChild(canvas);
-    layers.push(canvas);
-    currentLayer = canvas;
-    addLayerToPanel();
+  function setup() {
+    const canvas = createCanvas(600, 600);
+    canvas.parent("canvasContainer");
+    angleMode(DEGREES);
+    background(255);
   }
 
-  function addLayerToPanel() {
-    const layerContainer = document.createElement("div");
-    layerContainer.className = "layer";
-    const layerCheckbox = document.createElement("input");
-    layerCheckbox.type = "checkbox";
-    layerCheckbox.checked = true;
-    layerCheckbox.onchange = (e) => toggleLayerVisibility(e.target, layers.length - 1);
-    const layerLabel = document.createElement("label");
-    layerLabel.textContent = `Layer ${layers.length}`;
-    layerContainer.appendChild(layerCheckbox);
-    layerContainer.appendChild(layerLabel);
-    document.getElementById("layers").appendChild(layerContainer);
+  function updateSections() {
+    numSections = document.getElementById("numSections").value;
   }
 
-  function toggleLayerVisibility(checkbox, layerIndex) {
-    layers[layerIndex].style.display = checkbox.checked ? "block" : "none";
-  }
-
-  // Brush and Drawing Functions
   function updateBrushSize() {
     brushSize = document.getElementById("brushSize").value;
   }
 
-  function updateColor() {
+  function updateBrushColor() {
     brushColor = document.getElementById("colorPicker").value;
   }
 
-  function setBrushType(type) {
-    brushType = type;
+  function clearCanvas() {
+    background(255);
   }
 
-  function draw(e) {
-    if (!e.buttons) return; // Only draw when mouse is pressed
-    const ctx = currentLayer.getContext("2d");
-    ctx.fillStyle = brushColor;
-    ctx.strokeStyle = brushColor;
-    ctx.lineWidth = brushSize;
-
-    if (brushType === "eraser") ctx.globalCompositeOperation = "destination-out";
-    else ctx.globalCompositeOperation = "source-over";
-
-    ctx.beginPath();
-    ctx.arc(e.offsetX, e.offsetY, brushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  currentLayer.addEventListener("mousemove", draw);
-
-  // Shape and Text Tools
-  function addShape(shape) {
-    const ctx = currentLayer.getContext("2d");
-    ctx.fillStyle = brushColor;
-    ctx.lineWidth = brushSize;
-
-    if (shape === "circle") {
-      ctx.beginPath();
-      ctx.arc(100, 100, 50, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (shape === "rectangle") {
-      ctx.fillRect(100, 100, 100, 50);
-    }
-    saveState();
-  }
-
-  function addText() {
-    const text = prompt("Enter text:");
-    if (text) {
-      const ctx = currentLayer.getContext("2d");
-      ctx.fillStyle = brushColor;
-      ctx.font = `${brushSize * 5}px Arial`;
-      ctx.fillText(text, 100, 100);
-      saveState();
-    }
-  }
-
-  // Undo/Redo Functionality
-  function saveState() {
-    if (history.length >= 10) history.shift(); // Limit history to 10 states
-    history.push(currentLayer.toDataURL());
-  }
-
-  function undo() {
-    if (history.length === 0) return;
-    const lastState = history.pop();
-    const img = new Image();
-    img.src = lastState;
-    img.onload = () => {
-      const ctx = currentLayer.getContext("2d");
-      ctx.clearRect(0, 0, currentLayer.width, currentLayer.height);
-      ctx.drawImage(img, 0, 0);
-    };
-  }
-
-  function redo() {
-    // Implement redo logic if needed
-  }
-
-  // Export Functionality
-  function exportImage() {
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = currentLayer.width;
-    exportCanvas.height = currentLayer.height;
-    const ctx = exportCanvas.getContext("2d");
-
-    layers.forEach(layer => {
-      if (layer.style.display !== "none") {
-        ctx.drawImage(layer, 0, 0);
+  function draw() {
+    if (mouseIsPressed) {
+      if (!isDrawing) {
+        prevX = mouseX - width / 2;
+        prevY = mouseY - height / 2;
+        isDrawing = true;
       }
-    });
 
-    const link = document.createElement("a");
-    link.download = "drawing.png";
-    link.href = exportCanvas.toDataURL("image/png");
-    link.click();
+      translate(width / 2, height / 2);
+      let angleStep = 360 / numSections;
+
+      for (let i = 0; i < numSections; i++) {
+        push();
+        rotate(i * angleStep);
+        drawStroke(prevX, prevY, mouseX - width / 2, mouseY - height / 2);
+        pop();
+      }
+
+      prevX = mouseX - width / 2;
+      prevY = mouseY - height / 2;
+    } else {
+      isDrawing = false;
+    }
+  }
+
+  function drawStroke(x1, y1, x2, y2) {
+    stroke(brushColor);
+    strokeWeight(brushSize);
+    line(x1, y1, x2, y2);
+
+    // Add a splatter effect for organic look
+    if (random(1) < 0.3) {
+      let splatterSize = random(brushSize, brushSize * 2);
+      ellipse(x2 + random(-5, 5), y2 + random(-5, 5), splatterSize, splatterSize);
+    }
+  }
+
+  function exportGlyph() {
+    saveCanvas("heptapod_glyph", "png");
   }
 </script>
 
 </body>
 </html>
+
