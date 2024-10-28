@@ -1,2 +1,2 @@
 # Logoglyph
-Logoglyphs based on the film Arrival
+Logoglyphs based on the 2016 film Arrival
