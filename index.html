@@ -1,5 +1,5 @@
 ARRIVAL LOGOGLYPH GENERATOR
-TYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@ TYPE html>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; }
     .controls { margin: 20px; }
-    canvas { border: 1px solid #ddd; background: white; }
+    canvas { border: 1px solid #ddd; background: white; cursor: crosshair; }
   </style>
 </head>
 <body>
@@ -19,7 +19,6 @@ TYPE html>
   <label>Circle Radius: <input type="range" id="radius" min="50" max="200" value="150"></label>
   <label>Stroke Width: <input type="range" id="strokeWidth" min="5" max="20" value="10"></label>
   <label>Blot Size: <input type="range" id="blotSize" min="10" max="50" value="30"></label>
-  <label>Blot Angle: <input type="range" id="blotAngle" min="0" max="360" value="45"></label>
   <label>Blot Style: 
     <select id="blotStyle">
       <option value="circle">Circle</option>
@@ -37,13 +36,12 @@ TYPE html>
   const ctx = canvas.getContext("2d");
   const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
-  // Function to draw the circle and ink blot
+  const blots = []; // Store all blots placed on the canvas
+
+  // Draw the main circle and all blots
   function drawGlyph() {
     const radius = parseInt(document.getElementById("radius").value);
     const strokeWidth = parseInt(document.getElementById("strokeWidth").value);
-    const blotSize = parseInt(document.getElementById("blotSize").value);
-    const blotAngle = parseInt(document.getElementById("blotAngle").value);
-    const blotStyle = document.getElementById("blotStyle").value;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -54,16 +52,11 @@ TYPE html>
     ctx.strokeStyle = "black";
     ctx.stroke();
 
-    // Calculate blot position based on angle
-    const angleRad = (blotAngle * Math.PI) / 180;
-    const blotX = center.x + (radius + strokeWidth / 2) * Math.cos(angleRad);
-    const blotY = center.y + (radius + strokeWidth / 2) * Math.sin(angleRad);
-
-    ctx.fillStyle = "black";
-    drawBlot(blotX, blotY, blotSize, blotStyle);
+    // Draw all placed blots
+    blots.forEach(blot => drawBlot(blot.x, blot.y, blot.size, blot.style));
   }
 
-  // Function to draw different types of ink blots
+  // Draw individual blot
   function drawBlot(x, y, size, style) {
     if (style === "circle") {
       ctx.beginPath();
@@ -93,9 +86,19 @@ TYPE html>
     }
   }
 
-  // Update the glyph on parameter change
-  document.querySelectorAll(".controls input, .controls select").forEach(input => {
-    input.addEventListener("input", drawGlyph);
+  // Add a blot to the canvas at the clicked position
+  canvas.addEventListener("click", (e) => {
+    const blotSize = parseInt(document.getElementById("blotSize").value);
+    const blotStyle = document.getElementById("blotStyle").value;
+
+    // Get the click position relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Add the blot data to the array and redraw
+    blots.push({ x, y, size: blotSize, style: blotStyle });
+    drawGlyph();
   });
 
   // Export the canvas as an image
@@ -106,8 +109,13 @@ TYPE html>
     link.click();
   }
 
-  // Initial draw
+  // Initial draw of the main circle
   drawGlyph();
+
+  // Update the main circle on control changes
+  document.querySelectorAll(".controls input, .controls select").forEach(input => {
+    input.addEventListener("input", drawGlyph);
+  });
 </script>
 
 </body>
