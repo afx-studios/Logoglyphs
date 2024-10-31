@@ -1,5 +1,5 @@
 ARRIVAL LOGOGLYPH GENERATOR
-<!DOCTYPE html>
+TYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -37,7 +37,7 @@ ARRIVAL LOGOGLYPH GENERATOR
   const ctx = canvas.getContext("2d");
   const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
-  // Draw the circle and ink blot
+  // Function to draw the circle and ink blot
   function drawGlyph() {
     const radius = parseInt(document.getElementById("radius").value);
     const strokeWidth = parseInt(document.getElementById("strokeWidth").value);
@@ -46,15 +46,15 @@ ARRIVAL LOGOGLYPH GENERATOR
     const blotStyle = document.getElementById("blotStyle").value;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw the circle
+
+    // Draw the main circle
     ctx.beginPath();
     ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
     ctx.lineWidth = strokeWidth;
     ctx.strokeStyle = "black";
     ctx.stroke();
 
-    // Draw the ink blot based on style
+    // Calculate blot position based on angle
     const angleRad = (blotAngle * Math.PI) / 180;
     const blotX = center.x + (radius + strokeWidth / 2) * Math.cos(angleRad);
     const blotY = center.y + (radius + strokeWidth / 2) * Math.sin(angleRad);
@@ -63,14 +63,14 @@ ARRIVAL LOGOGLYPH GENERATOR
     drawBlot(blotX, blotY, blotSize, blotStyle);
   }
 
-  // Draw different types of ink blots
+  // Function to draw different types of ink blots
   function drawBlot(x, y, size, style) {
     if (style === "circle") {
       ctx.beginPath();
       ctx.arc(x, y, size, 0, 2 * Math.PI);
       ctx.fill();
     } else if (style === "splatter") {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         const randomSize = size * 0.3 + Math.random() * size * 0.7;
         const offsetX = (Math.random() - 0.5) * size * 1.5;
         const offsetY = (Math.random() - 0.5) * size * 1.5;
@@ -93,7 +93,7 @@ ARRIVAL LOGOGLYPH GENERATOR
     }
   }
 
-  // Update glyph on parameter change
+  // Update the glyph on parameter change
   document.querySelectorAll(".controls input, .controls select").forEach(input => {
     input.addEventListener("input", drawGlyph);
   });
