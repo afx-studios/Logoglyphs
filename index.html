@@ -19,6 +19,13 @@ TYPE html>
   <label>Circle Radius: <input type="range" id="radius" min="50" max="200" value="150"></label>
   <label>Stroke Width: <input type="range" id="strokeWidth" min="5" max="20" value="10"></label>
   <label>Blot Size: <input type="range" id="blotSize" min="10" max="50" value="30"></label>
+  <label>Blot Style: 
+    <select id="blotStyle">
+      <option value="circle">Circle</option>
+      <option value="splatter">Splatter</option>
+      <option value="irregular">Irregular</option>
+    </select>
+  </label>
   <button onclick="exportImage()">Export Glyph</button>
 </div>
 
@@ -29,6 +36,87 @@ TYPE html>
   const ctx = canvas.getContext("2d");
   const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
-  // Function to draw the main circle
-  function drawCircle() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+  const blots = []; // Store all blots placed on the canvas
+
+  // Draw the main circle and all blots
+  function drawGlyph() {
+    const radius = parseInt(document.getElementById("radius").value);
+    const strokeWidth = parseInt(document.getElementById("strokeWidth").value);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the main circle
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+
+    // Draw all placed blots
+    blots.forEach(blot => drawBlot(blot.x, blot.y, blot.size, blot.style));
+  }
+
+  // Draw individual blot
+  function drawBlot(x, y, size, style) {
+    if (style === "circle") {
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, 2 * Math.PI);
+      ctx.fill();
+    } else if (style === "splatter") {
+      for (let i = 0; i < 6; i++) {
+        const randomSize = size * 0.3 + Math.random() * size * 0.7;
+        const offsetX = (Math.random() - 0.5) * size * 1.5;
+        const offsetY = (Math.random() - 0.5) * size * 1.5;
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, randomSize, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    } else if (style === "irregular") {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3 + Math.random() * 0.3;
+        const r = size * 0.6 + Math.random() * size * 0.4;
+        const offsetX = r * Math.cos(angle);
+        const offsetY = r * Math.sin(angle);
+        ctx.lineTo(x + offsetX, y + offsetY);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // Add a blot to the canvas at the clicked position
+  canvas.addEventListener("click", (e) => {
+    const blotSize = parseInt(document.getElementById("blotSize").value);
+    const blotStyle = document.getElementById("blotStyle").value;
+
+    // Get the click position relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Add the blot data to the array and redraw
+    blots.push({ x, y, size: blotSize, style: blotStyle });
+    drawGlyph();
+  });
+
+  // Export the canvas as an image
+  function exportImage() {
+    const link = document.createElement("a");
+    link.download = "heptapod_glyph.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  // Initial draw of the main circle
+  drawGlyph();
+
+  // Update the main circle on control changes
+  document.querySelectorAll(".controls input, .controls select").forEach(input => {
+    input.addEventListener("input", drawGlyph);
+  });
+</script>
+
+</body>
+</html>
