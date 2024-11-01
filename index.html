@@ -35,9 +35,10 @@ ARRIVAL LOGOGLYPH GENERATOR
   const ctx = canvas.getContext("2d");
   const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
+  let circleRadius = parseInt(document.getElementById("radius").value);
+  let circleStrokeWidth = parseInt(document.getElementById("strokeWidth").value);
   const blots = []; // Store all blots placed on the canvas
 
-  // Draw the main circle and all blots
-  function drawGlyph() {
-    const radius = parseInt(document.getElementById("radius").value);
-    const strokeWidth = parseInt(document.getElementById("str
+  // Function to draw the main circle
+  function drawCircle() {
+    ctx.beginPath();
