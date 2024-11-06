@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+TYPE html>
 <html>
 <head>
   <title>Ink Blot Database</title>
@@ -14,27 +14,27 @@
     }
     .inkblot-item {
       text-align: center; 
-      position: relative; /* For positioning the zoom icon */
+      position: relative; 
     }
     .inkblot-item img {
       max-width: 100%;
       height: auto;
       border: 1px solid #ddd; 
-      transition: transform 0.3s; /* Smooth zoom transition */
+      transition: transform 0.3s; 
     }
     .inkblot-item img:hover {
-      transform: scale(1.1); /* Zoom effect on hover */
+      transform: scale(1.1); 
       cursor: pointer;
     }
     .zoom-icon {
       position: absolute;
       top: 10px;
       right: 10px;
-      opacity: 0; /* Initially hidden */
-      transition: opacity 0.3s; /* Smooth transition for icon */
+      opacity: 0; 
+      transition: opacity 0.3s;
     }
     .inkblot-item:hover .zoom-icon {
-      opacity: 1; /* Show icon on hover */
+      opacity: 1; 
     }
   </style>
 </head>
@@ -46,7 +46,20 @@
 
   <div class="inkblot-item">
     <img src="inkblot_a.png" alt="Inkblot A">
-    <img src="zoom-icon.png" alt="Zoom" class="zoom-icon"> <p>A</p>
+    <img src="zoom-icon.png" alt="Zoom" class="zoom-icon"> 
+    <p>A</p>
+  </div>
+
+  <div class="inkblot-item">
+    <img src="inkblot_b.png" alt="Inkblot B">
+    <img src="zoom-icon.png" alt="Zoom" class="zoom-icon"> 
+    <p>B</p>
+  </div>
+
+  <div class="inkblot-item">
+    <img src="inkblot_c.png" alt="Inkblot C">
+    <img src="zoom-icon.png" alt="Zoom" class="zoom-icon"> 
+    <p>C</p>
   </div>
 
   </div> 
